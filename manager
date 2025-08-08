@@ -1,0 +1,695 @@
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+import { Video, Image, FileText, BarChart3, Users, Target, CheckCircle, Clock, AlertCircle, Search, Filter } from 'lucide-react'
+
+// Types
+type DeliverableStatus = "sin-empezar" | "en-proceso" | "terminado" | "en-revision" | "detenido"
+type ResponsibleParty = "Marketing" | "Diseño" | "Contenido" | "Comercial" | "Producción" | "TI" | "Dev" | "Malinalli" | "Jazmin"
+
+interface Deliverable {
+  id: string
+  category: string
+  subcategory: string
+  task: string
+  deliverable: string
+  responsible: ResponsibleParty[]
+  status: DeliverableStatus
+  priority: "high" | "medium" | "low"
+  dueDate: string
+  progress: number
+  type: "video" | "design" | "content" | "dashboard" | "automation" | "material"
+}
+
+// Mock data based on the provided plan
+const deliverables: Deliverable[] = [
+  // Landing Page 1 (Captación)
+  {
+    id: "lp1-video",
+    category: "Landing Page 1",
+    subcategory: "Captación",
+    task: "Video Clave de Prospección",
+    deliverable: "Video 1 (60-90 seg, guion, grabación, edición)",
+    responsible: ["Marketing", "Comercial", "Producción"],
+    status: "en-proceso",
+    priority: "high",
+    dueDate: "2024-02-15",
+    progress: 65,
+    type: "video"
+  },
+  {
+    id: "lp1-logos",
+    category: "Landing Page 1",
+    subcategory: "Captación",
+    task: "Prueba social con logos",
+    deliverable: "Arte con logos en gris claro",
+    responsible: ["Diseño"],
+    status: "terminado",
+    priority: "medium",
+    dueDate: "2024-02-10",
+    progress: 100,
+    type: "design"
+  },
+  {
+    id: "lp1-infografias",
+    category: "Landing Page 1",
+    subcategory: "Captación",
+    task: "Cifras en números reales",
+    deliverable: "Infografías (mínimo 3 artes) + copy validado",
+    responsible: ["Diseño", "Contenido"],
+    status: "en-proceso",
+    priority: "high",
+    dueDate: "2024-02-20",
+    progress: 40,
+    type: "design"
+  },
+  {
+    id: "lp1-cta",
+    category: "Landing Page 1",
+    subcategory: "Captación",
+    task: "CTA y formulario",
+    deliverable: "Copys de titular, subtítulo y botón + implementación del formulario",
+    responsible: ["Contenido", "Dev"],
+    status: "sin-empezar",
+    priority: "high",
+    dueDate: "2024-02-25",
+    progress: 0,
+    type: "content"
+  },
+  // Landing Page 2 (Cierre)
+  {
+    id: "lp2-video",
+    category: "Landing Page 2",
+    subcategory: "Cierre",
+    task: "Video de confirmación",
+    deliverable: "Video 2 (agradecimiento y beneficios)",
+    responsible: ["Marketing", "Producción"],
+    status: "sin-empezar",
+    priority: "medium",
+    dueDate: "2024-03-01",
+    progress: 0,
+    type: "video"
+  },
+  {
+    id: "lp2-cartas",
+    category: "Landing Page 2",
+    subcategory: "Cierre",
+    task: "Cartas de recomendación",
+    deliverable: "Diseño de extractos visuales (mínimo 3)",
+    responsible: ["Diseño", "Comercial"],
+    status: "sin-empezar",
+    priority: "medium",
+    dueDate: "2024-03-05",
+    progress: 0,
+    type: "design"
+  },
+  {
+    id: "lp2-testimonios",
+    category: "Landing Page 2",
+    subcategory: "Cierre",
+    task: "Testimonios en GIFs/videos",
+    deliverable: "3 micro videos testimoniales (15-30 seg) + edición",
+    responsible: ["Marketing", "Producción"],
+    status: "en-proceso",
+    priority: "high",
+    dueDate: "2024-02-28",
+    progress: 25,
+    type: "video"
+  },
+  // Engranaje 1: Metodología de Ventas
+  {
+    id: "eng1-mapeo",
+    category: "Engranaje 1",
+    subcategory: "Metodología de Ventas",
+    task: "Mapeo de consciencia",
+    deliverable: "Matriz de contenido por etapa de consciencia",
+    responsible: ["Marketing", "Comercial"],
+    status: "terminado",
+    priority: "high",
+    dueDate: "2024-02-05",
+    progress: 100,
+    type: "content"
+  },
+  {
+    id: "eng1-mensajes",
+    category: "Engranaje 1",
+    subcategory: "Metodología de Ventas",
+    task: "Mensajes por sector y ciudad",
+    deliverable: "Matriz de copys segmentados (mínimo 12)",
+    responsible: ["Contenido"],
+    status: "en-proceso",
+    priority: "high",
+    dueDate: "2024-02-22",
+    progress: 75,
+    type: "content"
+  },
+  // Engranaje 4: Supervisión Comercial
+  {
+    id: "eng4-dashboard",
+    category: "Engranaje 4",
+    subcategory: "Supervisión Comercial",
+    task: "Dashboards de leads",
+    deliverable: "Dashboard en Data Studio o CRM (KPI por canal)",
+    responsible: ["Marketing", "TI"],
+    status: "en-proceso",
+    priority: "high",
+    dueDate: "2024-03-10",
+    progress: 30,
+    type: "dashboard"
+  },
+  {
+    id: "eng4-utms",
+    category: "Engranaje 4",
+    subcategory: "Supervisión Comercial",
+    task: "Seguimiento con UTMs",
+    deliverable: "Plantilla de UTMs y manual de uso",
+    responsible: ["Marketing"],
+    status: "terminado",
+    priority: "medium",
+    dueDate: "2024-02-08",
+    progress: 100,
+    type: "material"
+  },
+  // Engranaje 5: Habilitación Comercial
+  {
+    id: "eng5-materials",
+    category: "Engranaje 5",
+    subcategory: "Habilitación Comercial",
+    task: "Materiales Sales Enablement",
+    deliverable: "Casos de éxito (3), Datasheets (1 por servicio), Battlecards (1 por objeción)",
+    responsible: ["Marketing", "Diseño", "Comercial"],
+    status: "en-proceso",
+    priority: "high",
+    dueDate: "2024-03-15",
+    progress: 45,
+    type: "material"
+  },
+  // Engranaje 6: Prospección Digital Escalable
+  {
+    id: "eng6-campaigns",
+    category: "Engranaje 6",
+    subcategory: "Prospección Digital",
+    task: "Campañas digitales",
+    deliverable: "3 campañas (Ads + copy + segmentación) por sector/ciudad",
+    responsible: ["Marketing"],
+    status: "sin-empezar",
+    priority: "high",
+    dueDate: "2024-03-20",
+    progress: 0,
+    type: "content"
+  },
+  {
+    id: "eng6-automation",
+    category: "Engranaje 6",
+    subcategory: "Prospección Digital",
+    task: "Automatización de captación",
+    deliverable: "Flujo de captación implementado en CRM",
+    responsible: ["Marketing", "TI"],
+    status: "sin-empezar",
+    priority: "high",
+    dueDate: "2024-03-25",
+    progress: 0,
+    type: "automation"
+  }
+]
+
+const statusColors = {
+  "sin-empezar": "bg-gray-100 text-gray-800",
+  "en-proceso": "bg-blue-100 text-blue-800",
+  "terminado": "bg-green-100 text-green-800",
+  "en-revision": "bg-yellow-100 text-yellow-800",
+  "detenido": "bg-red-100 text-red-800"
+}
+
+const statusIcons = {
+  "sin-empezar": Clock,
+  "en-proceso": AlertCircle,
+  "terminado": CheckCircle,
+  "en-revision": AlertCircle,
+  "detenido": AlertCircle
+}
+
+const typeIcons = {
+  video: Video,
+  design: Image,
+  content: FileText,
+  dashboard: BarChart3,
+  automation: Target,
+  material: Users
+}
+
+export default function MarketingDashboard() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [responsibleFilter, setResponsibleFilter] = useState<string>("all")
+  const [categoryFilter, setCategoryFilter] = useState<string>("all")
+  const [deliverablesList, setDeliverablesList] = useState<Deliverable[]>(deliverables)
+  const [draggedItem, setDraggedItem] = useState<string | null>(null)
+  const [savedStatus, setSavedStatus] = useState<{[key: string]: boolean}>({})
+
+  // Filter deliverables
+  const filteredDeliverables = deliverablesList.filter(item => {
+    const matchesSearch = item.deliverable.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.task.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || item.status === statusFilter
+    const matchesResponsible = responsibleFilter === "all" || item.responsible.includes(responsibleFilter as ResponsibleParty)
+    const matchesCategory = categoryFilter === "all" || item.category === categoryFilter
+    
+    return matchesSearch && matchesStatus && matchesResponsible && matchesCategory
+  })
+
+  // Calculate statistics
+  const totalDeliverables = deliverablesList.length
+  const completedDeliverables = deliverablesList.filter(d => d.status === "terminado").length
+  const inProgressDeliverables = deliverablesList.filter(d => d.status === "en-proceso").length
+  const pendingDeliverables = deliverablesList.filter(d => d.status === "sin-empezar").length
+  const overallProgress = Math.round((deliverablesList.reduce((sum, d) => sum + d.progress, 0) / deliverablesList.length))
+
+  // Get unique values for filters
+  const categories = [...new Set(deliverablesList.map(d => d.category))]
+  const responsibleParties = [...new Set(deliverablesList.flatMap(d => d.responsible))]
+
+  const handleDragStart = (e: React.DragEvent, itemId: string) => {
+    setDraggedItem(itemId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault()
+    if (!draggedItem || draggedItem === targetId) return
+    
+    const draggedIndex = deliverablesList.findIndex(d => d.id === draggedItem)
+    const targetIndex = deliverablesList.findIndex(d => d.id === targetId)
+    
+    if (draggedIndex === -1 || targetIndex === -1) return
+    
+    const newList = [...deliverablesList]
+    const [draggedDeliverable] = newList.splice(draggedIndex, 1)
+    newList.splice(targetIndex, 0, draggedDeliverable)
+    
+    setDeliverablesList(newList)
+    setDraggedItem(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedItem(null)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Logo and Save Progress Header */}
+      <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
+        <div className="flex items-center gap-4">
+          <img 
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/LOGO%20COMPECER%20HORIZONTAL%201-7fMCh6nyOdAymHuRTk8k7Iqum8vfKj.png" 
+            alt="COMPECER Logo" 
+            className="h-12 w-auto"
+          />
+        </div>
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={() => {
+              // Save current state to localStorage
+              localStorage.setItem('compecer-deliverables', JSON.stringify(deliverablesList));
+              localStorage.setItem('compecer-last-saved', new Date().toISOString());
+              
+              // Show success message
+              alert('Progreso guardado exitosamente');
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            💾 Guardar Progreso
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              // Load saved state from localStorage
+              const savedDeliverables = localStorage.getItem('compecer-deliverables');
+              const lastSaved = localStorage.getItem('compecer-last-saved');
+              
+              if (savedDeliverables) {
+                setDeliverablesList(JSON.parse(savedDeliverables));
+                alert(`Progreso cargado desde: ${lastSaved ? new Date(lastSaved).toLocaleString() : 'fecha desconocida'}`);
+              } else {
+                alert('No hay progreso guardado disponible');
+              }
+            }}
+          >
+            📂 Cargar Progreso
+          </Button>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Plan de Marketing B2B - COMPECER PIPELINE
+        </h1>
+        <p className="text-gray-600">
+          Seguimiento y control de entregables por categoría y engranaje
+        </p>
+      </div>
+
+        {/* Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Entregables</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalDeliverables}</div>
+              <p className="text-xs text-muted-foreground">
+                Across all categories
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completados</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{completedDeliverables}</div>
+              <p className="text-xs text-muted-foreground">
+                {Math.round((completedDeliverables / totalDeliverables) * 100)}% del total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">En Progreso</CardTitle>
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{inProgressDeliverables}</div>
+              <p className="text-xs text-muted-foreground">
+                {Math.round((inProgressDeliverables / totalDeliverables) * 100)}% del total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Progreso General</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overallProgress}%</div>
+              <Progress value={overallProgress} className="mt-2" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros y Búsqueda
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Buscar</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar entregables..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Estado</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos los estados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    <SelectItem value="sin-empezar">Sin Empezar</SelectItem>
+                    <SelectItem value="en-proceso">En Proceso</SelectItem>
+                    <SelectItem value="terminado">Terminado</SelectItem>
+                    <SelectItem value="en-revision">En Revisión</SelectItem>
+                    <SelectItem value="detenido">Detenido</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Categoría</label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas las categorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las categorías</SelectItem>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Responsable</label>
+                <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos los responsables" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los responsables</SelectItem>
+                    {responsibleParties.map(party => (
+                      <SelectItem key={party} value={party}>{party}</SelectItem>
+                    ))}
+                    <SelectItem value="Malinalli">Malinalli</SelectItem>
+                    <SelectItem value="Jazmin">Jazmin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Deliverables Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Entregables Detallados</CardTitle>
+            <CardDescription>
+              {filteredDeliverables.length} de {totalDeliverables} entregables mostrados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {filteredDeliverables.map((item) => {
+                const StatusIcon = statusIcons[item.status]
+                const TypeIcon = typeIcons[item.type]
+                
+                return (
+                  <div 
+                    key={item.id} 
+                    className={`border rounded-lg p-4 space-y-3 transition-colors cursor-move ${
+                      item.status === 'terminado' ? 'bg-green-50 border-green-200' :
+                      item.status === 'en-proceso' ? 'bg-blue-50 border-blue-200' :
+                      item.status === 'en-revision' ? 'bg-yellow-50 border-yellow-200' :
+                      item.status === 'detenido' ? 'bg-red-50 border-red-200' :
+                      'bg-gray-50 border-gray-200'
+                    } ${draggedItem === item.id ? 'opacity-50' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, item.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, item.id)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <TypeIcon className="h-4 w-4 text-muted-foreground" />
+                          <h3 className="font-semibold text-sm">{item.task}</h3>
+                          <Badge variant="outline" className="text-xs">
+                            {item.category}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-muted-foreground flex-1">{item.deliverable}</p>
+                          {savedStatus[item.id] && (
+                            <Badge variant="outline" className="text-xs text-green-600 bg-green-50">
+                              ✓ Guardado
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>Vence: {item.dueDate}</span>
+                          <span>•</span>
+                          <span>Responsables: {item.responsible.join(", ")}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {item.responsible.map((person, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {person}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge className={statusColors[item.status]}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {item.status === "sin-empezar" && "Sin Empezar"}
+                          {item.status === "en-proceso" && "En Proceso"}
+                          {item.status === "terminado" && "Terminado"}
+                          {item.status === "en-revision" && "En Revisión"}
+                          {item.status === "detenido" && "Detenido"}
+                        </Badge>
+                        <Badge variant={item.priority === "high" ? "destructive" : item.priority === "medium" ? "default" : "secondary"}>
+                          {item.priority === "high" && "Alta"}
+                          {item.priority === "medium" && "Media"}
+                          {item.priority === "low" && "Baja"}
+                        </Badge>
+                        <Select
+                          value={item.status}
+                          onValueChange={(newStatus: DeliverableStatus) => {
+                            // Calculate new progress based on status
+                            let newProgress = item.progress;
+                            if (newStatus === "sin-empezar") newProgress = 0;
+                            else if (newStatus === "en-proceso") newProgress = Math.max(25, item.progress);
+                            else if (newStatus === "en-revision") newProgress = Math.max(75, item.progress);
+                            else if (newStatus === "terminado") newProgress = 100;
+                            else if (newStatus === "detenido") newProgress = item.progress; // Keep current progress
+                            
+                            // Update the deliverables list
+                            setDeliverablesList(prev => prev.map(d => 
+                              d.id === item.id ? { ...d, status: newStatus, progress: newProgress } : d
+                            ));
+                            
+                            // Mark as saved
+                            setSavedStatus(prev => ({ ...prev, [item.id]: true }));
+                            
+                            // Remove saved status after 3 seconds
+                            setTimeout(() => {
+                              setSavedStatus(prev => ({ ...prev, [item.id]: false });
+                            }, 3000);
+                          }}
+                        >
+                          <SelectTrigger className="w-32 h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sin-empezar">Sin Empezar</SelectItem>
+                            <SelectItem value="en-proceso">En Proceso</SelectItem>
+                            <SelectItem value="terminado">Terminado</SelectItem>
+                            <SelectItem value="en-revision">En Revisión</SelectItem>
+                            <SelectItem value="detenido">Detenido</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span>Progreso</span>
+                        <span>{item.progress}%</span>
+                      </div>
+                      <Progress value={item.progress} className="h-2" />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Summary by Type */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumen por Tipo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(
+                  deliverablesList.reduce((acc, item) => {
+                    acc[item.type] = (acc[item.type] || 0) + 1
+                    return acc
+                  }, {} as Record<string, number>)
+                ).map(([type, count]) => {
+                  const TypeIcon = typeIcons[type as keyof typeof typeIcons]
+                  return (
+                    <div key={type} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TypeIcon className="h-4 w-4" />
+                        <span className="capitalize">
+                          {type === "video" && "Videos"}
+                          {type === "design" && "Diseño"}
+                          {type === "content" && "Contenido"}
+                          {type === "dashboard" && "Dashboards"}
+                          {type === "automation" && "Automatización"}
+                          {type === "material" && "Materiales"}
+                        </span>
+                      </div>
+                      <Badge variant="secondary">{count}</Badge>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumen Cuantitativo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span>Videos</span>
+                  <Badge>5 (2 principales + 3 testimoniales)</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Infografías/Artes</span>
+                  <Badge>6+ (logos, cifras, testimonios)</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Copys/Mensajes</span>
+                  <Badge>15+ (12 segmentados + 3 blogs)</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Materiales Comerciales</span>
+                  <Badge>10+ (casos, datasheets, battlecards)</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Dashboards/Reportes</span>
+                  <Badge>6 (3 dashboards + 3 informes)</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Automatizaciones</span>
+                  <Badge>2 (captación + scraping)</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
